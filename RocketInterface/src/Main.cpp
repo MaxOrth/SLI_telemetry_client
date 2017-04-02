@@ -5,8 +5,11 @@
 #include "imgui.h"
 #include "imgui_impl_glfw_gl3.h"
 
+#include "data_types.h"
 #include "gui.h"
 
+#include <ctime>
+#include <iostream>
 
 int main(void)
 {
@@ -26,6 +29,8 @@ int main(void)
 
   /* Make the window's context current */
   glfwMakeContextCurrent(window);
+
+  glfwSwapInterval(1);
 
   if (glewInit())
   {
@@ -47,6 +52,14 @@ int main(void)
     glfwPollEvents();
 
     ImGui_ImplGlfwGL3_NewFrame();
+
+    size_t avail;
+    if (avail = gui.GetSerial().available() >= sizeof(phys_data))
+    {
+      phys_data new_data;
+      gui.GetSerial().read(reinterpret_cast<uint8_t *>(&new_data), sizeof(new_data));
+      gui.Update(new_data);
+    }
 
     gui.Draw();
 

@@ -5,6 +5,9 @@
 
 #include "gui.h"
 
+#include <ctime>
+
+
 namespace
 {
   const long BAUDS[] = { 
@@ -22,6 +25,7 @@ namespace
 Gui::Gui()
   : dataList(), currentPort(), port("", BAUD_115200), currentBaud(BAUD_115200), graphOpen(true), mapOpen(true)
 {
+  beginTime = std::time(nullptr);
 }
 
 void Gui::Update(phys_data &data)
@@ -33,7 +37,17 @@ void Gui::Draw()
 {
   DrawSerialInputSelector();
   //DrawMap();
+
+  // draws a graph, but its a lot of work so... yaaaaaa
   DrawGraph();
+
+  // lists every velocity
+  ImGui::Begin("gps Stack");
+  for (int i = 0; i < dataList.size(); ++i)
+  {
+    ImGui::Text("%.1f,  %.1f", dataList[i].gps.x, dataList[i].gps.y);
+  }
+  ImGui::End();
 }
 
 serial::Serial& Gui::GetSerial()
@@ -52,7 +66,7 @@ void Gui::DrawSerialInputSelector()
   {
     for (auto i = devices.begin(); i != devices.end(); ++i)
     {
-      if (ImGui::MenuItem(i->port.c_str()))
+      if (ImGui::MenuItem(i->port.c_str(), nullptr, i->port == port.getPort()))
       {
         // selected port
         currentPort = i->port;
@@ -65,6 +79,10 @@ void Gui::DrawSerialInputSelector()
   if (portChange)
   {
     port.setPort(currentPort);
+    if (!port.isOpen())
+    {
+      port.open();
+    }
   }
 
 
@@ -85,6 +103,10 @@ void Gui::DrawSerialInputSelector()
   ImGui::EndMainMenuBar();
 }
 
+float Gui::Elapsed()
+{
+  return static_cast<float>(beginTime - std::time(NULL));
+}
 
 void Gui::DrawGraph()
 {
@@ -95,26 +117,6 @@ void Gui::DrawGraph()
     ImVec2 cursor = window->DC.CursorPos;
 
 
-    // TODO make it the window content dims?
-    float height = 300;
-    float width = 600;
-
-    float xmax = 100;
-    float ymax = 500;
-    
-    ImVec2 origin(0, height);
-    ImVec2 xAxisEnd(width, height);
-    ImVec2 yAxisEnd(0, 0);
-
-    drawList->AddLine(cursor + origin, cursor + yAxisEnd, IM_COL32_WHITE);
-    drawList->AddLine(cursor + origin, cursor + xAxisEnd, IM_COL32_WHITE);
-    ImVec2 prevPos(0, 0);
-    for (auto i = dataList.begin(); i != dataList.end(); ++i)
-    {
-      ImVec2 next(width * i->time / xmax, ymax - i->altitude);
-      drawList->AddLine(cursor + prevPos, cursor + next, IM_COL32(255, 0, 0, 255));
-      prevPos = next;
-    }
 
 
 

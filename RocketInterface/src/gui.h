@@ -31,6 +31,8 @@ private:
 
   bool graphOpen;
   bool mapOpen;
+
+  time_t beginTime;
   
 public:
   Gui();
@@ -39,5 +41,7 @@ public:
   void Update(phys_data &data);
 
   serial::Serial& GetSerial();
+
+  float Elapsed();
 
 };
