@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string>
+#include <tuple>
 #include "serial/serial.h"
 
 #define BAUD_9600 9600
@@ -19,11 +20,13 @@ class Gui
 {
 private:
 
-  std::vector<phys_data> dataList;
+  std::vector<std::tuple<phys_data, long>> dataList;
 
   void DrawMap();
   void DrawSerialInputSelector();
   void DrawGraph();
+
+  void StartGoogleMaps(float2 latlon);
 
   std::string currentPort;
   serial::Serial port;
@@ -43,5 +46,6 @@ public:
   serial::Serial& GetSerial();
 
   float Elapsed();
+  unsigned ElapsedU();
 
 };

@@ -53,6 +53,7 @@ int main(void)
 
     ImGui_ImplGlfwGL3_NewFrame();
 
+
     size_t avail;
     if (avail = gui.GetSerial().available() >= sizeof(phys_data))
     {

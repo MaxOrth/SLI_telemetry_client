@@ -81,7 +81,9 @@ struct phys_data
   float3 orientation;
   float3 acceleration;
   float3 angv;
+  float3 timestamp;
   char flags;
+  
 };
 #pragma pack()
 

@@ -6,7 +6,10 @@
 #include "gui.h"
 
 #include <ctime>
-
+#include <tuple>
+#include <fstream>
+#include <Windows.h>
+#include <string>
 
 namespace
 {
@@ -30,7 +33,10 @@ Gui::Gui()
 
 void Gui::Update(phys_data &data)
 {
-  dataList.push_back(data);
+  dataList.push_back({ data, ElapsedU() });
+  std::ofstream outFile("out.txt", std::iostream::app);
+  outFile << data.gps.x << "," << data.gps.y << std::endl;
+  outFile.close();
 }
 
 void Gui::Draw()
@@ -39,13 +45,43 @@ void Gui::Draw()
   //DrawMap();
 
   // draws a graph, but its a lot of work so... yaaaaaa
-  DrawGraph();
+  //DrawGraph();
 
-  // lists every velocity
-  ImGui::Begin("gps Stack");
-  for (int i = 0; i < dataList.size(); ++i)
+  // help synchronize the serial connection
+  ImGui::Begin("Serial setup");
+  if (ImGui::Button("Connect"))
   {
-    ImGui::Text("%.1f,  %.1f", dataList[i].gps.x, dataList[i].gps.y);
+    port.write("ABCDabcd");
+  }
+  ImGui::End();
+
+  if (ImGui::Begin("Telemetry"))
+  {
+    if (!dataList.empty())
+    {
+      auto &lasttuple = dataList.back();
+      phys_data &last = std::get<0>(lasttuple);
+      if (ImGui::Button("Open in google maps"))
+      {
+        StartGoogleMaps(last.gps);
+      }
+      ImGui::Text("Recieved packet %l at %f:%f:%f", std::get<1>(lasttuple), last.timestamp.x, last.timestamp.y, last.timestamp.z);
+      ImGui::Text("Fix quality: %i", static_cast<int>(last.flags));
+      ImGui::Text("GPS: %.6f, %.6f", last.gps.x, last.gps.y);
+      ImGui::Text("Altitude: %.1f", last.altitude);
+      ImGui::Text("Orientation");
+      ImGui::Text("x: %.3f", last.orientation.x);
+      ImGui::Text("y: %.3f", last.orientation.y);
+      ImGui::Text("z: %.3f", last.orientation.z);
+      ImGui::Text("Acceleration");
+      ImGui::Text("x: %.3f", last.acceleration.x);
+      ImGui::Text("y: %.3f", last.acceleration.y);
+      ImGui::Text("z: %.3f", last.acceleration.z);
+      ImGui::Text("Angular Velocity");
+      ImGui::Text("x: %.3f", last.angv.x);
+      ImGui::Text("y: %.3f", last.angv.y);
+      ImGui::Text("z: %.3f", last.angv.z);
+    }
   }
   ImGui::End();
 }
@@ -55,6 +91,15 @@ serial::Serial& Gui::GetSerial()
   return port;
 }
 
+
+void Gui::StartGoogleMaps(float2 latlon)
+{
+  // https://maps.google.com/maps?z=12&t=m&q=loc:38.9419+-78.3020 
+  std::string cmd("\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\" ");
+  cmd += "https://maps.google.com/maps/place/@";
+  cmd += std::to_string(latlon.x) + ',' + std::to_string(latlon.y) + ",14z";
+  system(cmd.c_str());
+}
 
 void Gui::DrawSerialInputSelector()
 {
@@ -82,6 +127,7 @@ void Gui::DrawSerialInputSelector()
     if (!port.isOpen())
     {
       port.open();
+      port.write("ABCDabcd");
     }
   }
 
@@ -101,6 +147,11 @@ void Gui::DrawSerialInputSelector()
   }
 
   ImGui::EndMainMenuBar();
+}
+
+unsigned Gui::ElapsedU()
+{
+  return beginTime - std::time(NULL);
 }
 
 float Gui::Elapsed()
